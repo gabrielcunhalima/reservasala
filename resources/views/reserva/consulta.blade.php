@@ -4,7 +4,7 @@
 
 @section('conteudo')
 
-<div class="teste mt-4 d-none">
+<div class="teste mt-5 d-none">
     <div class="card col-md-8 col-lg-5 col-sm-12 mx-auto shadow-lg">
         <div class="card-header text-center">
             <h3><b>Consulta de Reserva</b></h3>
@@ -53,11 +53,7 @@
                         </div>
                         
                         @if($reserva->situacaoAprovada != 2)
-                        <button type="button" class="btn btn-sm btn-danger cancelar-reserva" 
-                            data-id="{{ $dataReserva->id }}"
-                            data-data="{{ \Carbon\Carbon::parse($dataReserva->data)->format('d/m/Y') }}"
-                            data-bs-toggle="modal" 
-                            data-bs-target="#confirmaCancelamento">
+                        <button type="button" class="btn btn-sm btn-danger cancelar-reserva" data-id="{{ $dataReserva->id }}" data-data="{{ \Carbon\Carbon::parse($dataReserva->data)->format('d/m/Y') }}" data-bs-toggle="modal" data-bs-target="#confirmaCancelamento">
                             <i class="fas fa-times-circle"></i> Cancelar
                         </button>
                         @endif
@@ -102,7 +98,7 @@
                             
                             <div class="mb-3">
                                 <input type="text" class="form-control" id="hashCancelamento" name="hashCancelamento" required maxlength="5" placeholder="Código de Cancelamento">
-                                <div class="form-text">Este código foi enviado para o seu email quando você fez a reserva.</div>
+                                <div class="form-text">Este código foi enviado para o seu email <b>quando você realizou a reserva.</b></div>
                             </div>
                             <p class="text-danger"><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
                         </div>
@@ -195,7 +191,7 @@
             });
         }
 
-        const cards = document.querySelectorAll('.teste.mt-4');
+        const cards = document.querySelectorAll('.teste');
 
         cards.forEach(card => {
             card.classList.add('d-none');

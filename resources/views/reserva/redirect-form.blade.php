@@ -10,7 +10,6 @@
             height: 100vh;
             background-color: #0d9571;
             margin: 0;
-            font-family: 'Arial', sans-serif;
         }
         .loading-text {
             color: white;

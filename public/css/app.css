@@ -137,6 +137,10 @@ main {
     color: #3E3E3F;
 }
 
+.text-red {
+    color: #FF0000;
+}
+
 .custom-table thead {
     background-color: #2C4A44 !important;
     color: white !important;

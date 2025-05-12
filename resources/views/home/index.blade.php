@@ -5,45 +5,53 @@
 
 <style>
     .card-clicked {
-    animation: throwUpAnimation 0.5s ease-out forwards;
-    z-index: 100;
-    position: relative;
-}
+        animation: throwUpAnimation 0.5s ease-out forwards;
+        z-index: 100;
+        position: relative;
+    }
 
-@keyframes throwUpAnimation {
-    0% {
-        transform: translateY(0);
-        opacity: 1;
+    @keyframes throwUpAnimation {
+        0% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        20% {
+            transform: translateY(-40px) scale(1.00);
+            opacity: 0.9;
+        }
+
+        100% {
+            transform: translateY(-120px) scale(1.00);
+            opacity: 0;
+        }
     }
-    20% {
-        transform: translateY(-40px) scale(1.00);
-        opacity: 0.9;
-    }
-    100% {
-        transform: translateY(-120px) scale(1.00);
+
+    .title-hidden {
         opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.8s ease, transform 0.8s ease;
     }
-}
 
-.title-hidden {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.8s ease, transform 0.8s ease;
-}
-
-.title-visible {
-    opacity: 1;
-    transform: translateY(0);
-}
+    .title-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
 </style>
-<div class="row">
-    <div class="col-md-6 mx-auto text-center">
+<div class="row my-4 d-flex justify-content-between">
+    <div class="text-start col-auto">
+        <span class="text-white">Dispõe dos valores de locação de salas</span><br>
+        <a href="{{ asset('arquivos/portaria.pdf') }}" class="btn btn-outline-light btn-sm" target="_blank">
+            Portaria N. 002/DE/2024, DE 11 DE ABRIL DE 2024
+        </a>
+    </div>
+    <div class="text-end col-auto">
         <a href="{{ route('reserva.consulta') }}" class="btn btn-outline-light btn-lg">
             <i class="fas fa-search"></i> Já realizou a reserva?
         </a>
     </div>
 </div>
-<div class="row g-4 my-auto mb-4">
+<div class="row g-4 mb-4">
     @foreach($salas as $sala)
     <div class="col-md-4 col-sm-12 link-hover d-none">
         <div class="card h-100 border-0 shadow-lg">
@@ -70,86 +78,59 @@
     @endforeach
 </div>
 
-<h1 class="text-center text-white mt-5 d-none">Selecione uma sala para reservar</h1>
+<h1 class="text-center text-white d-none my-5">Selecione uma sala para reservar</h1>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const cards = document.querySelectorAll('.col-md-4.col-sm-12.link-hover');
-    const pageTitle = document.querySelector('h1.text-center.text-white');
-    
-    if (pageTitle) {
-        pageTitle.classList.add('title-hidden');
-        pageTitle.classList.remove('d-none');
-    }
-    
-    // Primeiro oculta todos os cards
-    cards.forEach(card => {
-        card.classList.add('d-none');
-    });
-    
-    // Função para animar os cards com um pequeno atraso entre cada um
-    function animateCards() {
-        let lastCardDelay = 0;
-        
-        cards.forEach((card, index) => {
-            const delay = 150 * index;
-            lastCardDelay = delay;
-            
-            setTimeout(() => {
-                card.classList.remove('d-none');
-                
-                card.classList.add('initial-animation');
-                
-                card.offsetHeight;
-                
-                // Inicia a animação
-                setTimeout(() => {
-                    card.classList.add('show-card');
-                    
-                    setTimeout(() => {
-                        card.classList.remove('initial-animation');
-                        card.classList.remove('show-card');
-                    }, 700);
-                }, 10);
-                
-            }, delay);
-        });
-        
-        // Anima o título após o último card
-        if (pageTitle) {
-            const titleDelay = lastCardDelay + 400;
-            
-            setTimeout(() => {
-                pageTitle.classList.add('title-visible');
-            }, titleDelay);
-        }
-    }
-    
+        const pageTitle = document.querySelector('h1.text-center.text-white');
 
-    setTimeout(animateCards, 200);
-    
-    // PARTE 2: ANIMAÇÃO DE CLIQUE DOS BOTÕES
-    // const buttons = document.querySelectorAll('.card-footer .btn');
-    // buttons.forEach(button => {
-    //     button.addEventListener('click', function(e) {
-    //         // Previne a navegação imediata
-    //         e.preventDefault();
-            
-    //         // Armazena o href do botão para navegação posterior
-    //         const href = this.getAttribute('href');
-            
-    //         // Encontra o card pai
-    //         const card = this.closest('.col-md-4.col-sm-12.link-hover');
-            
-    //         // Adiciona classe de animação de clique
-    //         card.classList.add('card-clicked');
-            
-    //         // Navega para o link após a animação terminar
-    //         setTimeout(() => {
-    //             window.location.href = href;
-    //         }, 500);
-    //     });
-    // });
-});
+        if (pageTitle) {
+            pageTitle.classList.add('title-hidden');
+            pageTitle.classList.remove('d-none');
+        }
+
+        cards.forEach(card => {
+            card.classList.add('d-none');
+        });
+
+        function animateCards() {
+            let lastCardDelay = 0;
+
+            cards.forEach((card, index) => {
+                const delay = 150 * index;
+                lastCardDelay = delay;
+
+                setTimeout(() => {
+                    card.classList.remove('d-none');
+
+                    card.classList.add('initial-animation');
+
+                    card.offsetHeight;
+
+                    setTimeout(() => {
+                        card.classList.add('show-card');
+
+                        setTimeout(() => {
+                            card.classList.remove('initial-animation');
+                            card.classList.remove('show-card');
+                        }, 700);
+                    }, 10);
+
+                }, delay);
+            });
+
+            if (pageTitle) {
+                const titleDelay = lastCardDelay + 400;
+
+                setTimeout(() => {
+                    pageTitle.classList.add('title-visible');
+                }, titleDelay);
+            }
+        }
+
+        setTimeout(animateCards, 200);
+
+    });
 </script>
 @endsection

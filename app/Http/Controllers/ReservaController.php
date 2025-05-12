@@ -8,6 +8,7 @@ use App\Models\Reserva;
 use App\Models\DataReserva;
 use App\Models\Turno;
 use App\Mail\ReservaConfirmada;
+use App\Mail\ReservaComProjeto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
@@ -196,6 +197,8 @@ class ReservaController extends Controller
 
         $diasSelecionados = [];
         $valorTotal = 0;
+        $totalTaxaLimpeza = 0;
+
 
         foreach ($request->reservas as $data => $turnoId) {
             if (!$this->verificarDisponibilidadeDia($sala->idSala, $data, $turnoId)) {
@@ -208,12 +211,17 @@ class ReservaController extends Controller
             ];
 
             $valorTotal += ($turnoId == 3) ? $sala->valorIntegral : $sala->valorMeioPeriodo;
+            $valorTotal += $sala->taxaLimpeza;
+            $totalTaxaLimpeza += $sala->taxaLimpeza;
         }
 
         return view('reserva.agendar', [
             'sala' => $sala,
             'diasSelecionados' => $diasSelecionados,
-            'valorTotal' => $valorTotal
+            'valorTotal' => $valorTotal,
+            'valorIntegram' => $sala->valorIntegral,
+            'valorMeioPeriodo' => $sala->valorMeioPeriodo,
+            'totalTaxaLimpeza' => $totalTaxaLimpeza,
         ]);
     }
 
@@ -302,6 +310,7 @@ class ReservaController extends Controller
                 }
 
                 $valor = ($turnoId == 3) ? $sala->valorIntegral : $sala->valorMeioPeriodo;
+                $valor += $sala->taxaLimpeza;
                 $valorTotal += $valor;
 
                 $reserva->valor = $valorTotal;
@@ -322,6 +331,15 @@ class ReservaController extends Controller
 
             Mail::to($reserva->email)
                 ->send(new ReservaConfirmada($reserva));
+
+            if ($validated['PossuiProjeto']) {
+                $reserva->load('sala', 'datasReserva');
+
+                Mail::to('gabriel.lima@fapeu.org.br')
+                    ->send(new ReservaComProjeto($reserva));
+
+                Log::info('Email de notificação de projeto enviado: ' . $reserva->idReserva);
+            }
 
             $reservasCriadas[] = $reserva->idReserva;
 
@@ -395,7 +413,7 @@ class ReservaController extends Controller
 
             if ($reserva->hashCancelamento !== $request->hashCancelamento) {
                 Log::warning('Tentativa de cancelamento com hash inválido para reserva: ' . $reserva->idReserva);
-                return back()->with('error', 'Código de cancelamento inválido. Por favor, verifique o código enviado no email de confirmação.');
+                return back()->with('error', 'Código de cancelamento inválido. Por favor, verifique o código enviado no email de confirmação da reserva.');
             }
 
             $dataReserva = DataReserva::findOrFail($request->data_reserva_id);
@@ -404,13 +422,42 @@ class ReservaController extends Controller
                 return back()->with('error', 'Esta data não pertence à reserva informada.');
             }
 
-            $datasRestantes = DataReserva::where('idReserva', $reserva->idReserva)
-                ->where('id', '!=', $dataReserva->id)
-                ->count();
+            $agora = Carbon::now('America/Sao_Paulo');
+            $dataReservada = Carbon::parse($dataReserva->data)->setTimezone('America/Sao_Paulo');
+
+            if ($dataReserva->diaTodo == 1 || $dataReserva->manha == 1) {
+                $horarioLimite = $dataReservada->copy()->setTime(8, 0, 0);
+            } else {
+                $horarioLimite = $dataReservada->copy()->setTime(13, 0, 0);
+            }
+
+            $prazoFinalCancelamento = $horarioLimite->copy()->subHours(48);
+
+            if ($agora->greaterThan($prazoFinalCancelamento)) {
+                return back()->with('error', 'O cancelamento só pode ser realizado com pelo menos 48 horas de antecedência do horário da reserva (horário de Brasília).');
+            }
+
+            $sala = Sala::findOrFail($reserva->idSala);
+
+            $valorDiario = 0;
+            if ($dataReserva->diaTodo == 1) {
+                $valorDiario = $sala->valorIntegral;
+            } else {
+                $valorDiario = $sala->valorMeioPeriodo;
+            }
+
+            $valorDiario += $sala->taxaLimpeza;
 
             DB::beginTransaction();
 
+            $reserva->valor -= $valorDiario;
+            $reserva->save();
+
             $dataReserva->delete();
+
+            $datasRestantes = DataReserva::where('idReserva', $reserva->idReserva)
+                ->where('id', '!=', $dataReserva->id)
+                ->count();
 
             if ($datasRestantes == 0) {
                 $reserva->delete();
@@ -442,12 +489,85 @@ class ReservaController extends Controller
 
             return view('reserva.consulta', [
                 'reserva' => $reservaAtualizada,
-                'success' => 'Dia cancelado com sucesso!'
+                'success' => 'Dia cancelado com sucesso! O valor da reserva foi atualizado.'
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Erro ao cancelar reserva: ' . $e->getMessage());
             return back()->with('error', 'Ocorreu um erro ao cancelar o dia de reserva. Por favor, tente novamente.');
+        }
+    }
+
+    public function gerarPix($id)
+    {
+        try {
+            $reserva = Reserva::with(['sala', 'datasReserva'])
+                ->where('idReserva', $id)
+                ->where('situacaoAprovada', 1)
+                ->firstOrFail();
+
+            if ($reserva->pago) {
+                return redirect()->route('reserva.consulta')
+                    ->with([
+                        'error' => 'Esta reserva já foi paga.'
+                    ]);
+            }
+
+            // Dados para integração com GetNet (estes são dados de exemplo)
+            $getnetConfig = [
+                'seller_id' => env('GETNET_SELLER_ID'),
+                'client_id' => env('GETNET_CLIENT_ID'),
+                'client_secret' => env('GETNET_CLIENT_SECRET'),
+                'environment' => env('GETNET_ENVIRONMENT', 'sandbox'),
+                'debug' => env('GETNET_DEBUG', false),
+            ];
+
+
+            try {
+                // integração real com a GetNet
+                // Código exemplo:
+                /*
+            $client = new GetnetClient($getnetConfig);
+            $qrCodeData = $client->generatePixQrCode([
+                'amount' => $reserva->valor,
+                'order_id' => $reserva->idReserva,
+                'customer' => [
+                    'name' => $reserva->nome,
+                    'document' => $reserva->cpf,
+                    'email' => $reserva->email
+                ]
+            ]);
+            */
+
+                // simulando dados retornados pela GetNet
+                $qrCodeData = [
+                    'qr_code' => 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=',
+                    'qr_code_text' => '00020101021226890014br.gov.bcb.pix2567pix.example.com/v2/123456789abcdef5204000053039865802BR5924FUNDACAO AMPARO PESQUISA6009SAO PAULO62070503***630400B4',
+                    'expiration_date' => Carbon::now()->addDays(1)->toIso8601String()
+                ];
+
+                return view('pagamento.pix', [
+                    'reserva' => $reserva,
+                    'qrCodeData' => $qrCodeData
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Erro na integração com GetNet: ' . $e->getMessage());
+                return redirect()->route('reserva.consulta')
+                    ->with([
+                        'error' => 'Ocorreu um erro ao gerar o PIX. Por favor, entre em contato com o suporte.'
+                    ]);
+            }
+        } catch (ModelNotFoundException $e) {
+            return redirect()->route('reserva.consulta')
+                ->with([
+                    'error' => 'Reserva não encontrada ou não está aprovada.'
+                ]);
+        } catch (\Exception $e) {
+            Log::error('Erro ao gerar PIX: ' . $e->getMessage());
+            return redirect()->route('reserva.consulta')
+                ->with([
+                    'error' => 'Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente.'
+                ]);
         }
     }
 }

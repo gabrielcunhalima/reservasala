@@ -9,7 +9,7 @@
         box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
     }
 </style>
-<div class="teste mt-4 d-none">
+<div class="teste d-none" style="margin-top: 10vh;">
     <div class="card col-lg-4 col-md-6 col-sm-12 offset-4 shadow-lg mx-auto">
         <div class="card-header text-center">
             <h3><b>{{ $sala->nomeSala }}</b></h3>
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    const cards = document.querySelectorAll('.teste.mt-4');
+    const cards = document.querySelectorAll('.teste');
     
     cards.forEach(card => {
         card.classList.add('d-none');

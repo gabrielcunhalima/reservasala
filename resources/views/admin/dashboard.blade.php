@@ -2,101 +2,170 @@
 
 @section('title', 'Painel Administrativo')
 
-@section('content')
-<div class="container-fluid py-4">
-    <div class="card shadow">
-        <div class="card-header bg-admin text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="h5 mb-0">
-                    <i class="fas fa-tachometer-alt me-2"></i>Painel Administrativo
-                </h2>
-                <span class="badge bg-warning">
-                    {{ $reservasPendentes->total() }} Reservas Pendentes
-                </span>
+@section('conteudo')
+<style>
+    .card-link {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card-link:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+    }
+</style>
+<div class="teste mt-4 d-none mb-3">
+    <div class="card col-md-10 col-sm-12 mx-auto shadow-lg">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3><b>Painel Administrativo</b></h3>
+            <div>
+                @if(session('admin_nome'))
+                <span class="me-3">Olá, {{ session('admin_nome') }}</span>
+                @endif
             </div>
         </div>
 
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>ID</th>
-                            <th>Sala</th>
-                            <th>Solicitante</th>
-                            <th>Data/Período</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($reservasPendentes as $reserva)
-                        <tr>
-                            <td>#{{ $reserva->idReserva }}</td>
-                            <td>{{ $reserva->sala->nomeSala }}</td>
-                            <td>
-                                {{ $reserva->nome }}<br>
-                                <small class="text-muted">{{ $reserva->email }}</small>
-                            </td>
-                            <td>
-                                {{ $reserva->dataReserva->format('d/m/Y') }}<br>
-                                <small class="text-muted">{{ $reserva->turno->Descricao }}</small>
-                            </td>
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <form method="POST" action="{{ route('admin.reserva.aprovar', $reserva->IDReserva) }}">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-success">
-                                            <i class="fas fa-check"></i> Aprovar
-                                        </button>
-                                    </form>
-
-                                    <button type="button" class="btn btn-sm btn-danger" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#rejeitarModal{{ $reserva->IDReserva }}">
-                                        <i class="fas fa-times"></i> Rejeitar
-                                    </button>
-                                </div>
-
-                                <!-- Modal de Rejeição -->
-                                <div class="modal fade" id="rejeitarModal{{ $reserva->IDReserva }}" tabindex="-1">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Rejeitar Reserva #{{ $reserva->IDReserva }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <form method="POST" action="{{ route('admin.reserva.rejeitar', $reserva->IDReserva) }}">
-                                                @csrf
-                                                <div class="modal-body">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">Justificativa:</label>
-                                                        <textarea class="form-control" name="justificativa" rows="3" required></textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                    <button type="submit" class="btn btn-danger">Confirmar Rejeição</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" class="text-center py-4">
-                                <div class="alert alert-info mb-0">
-                                    Nenhuma reserva pendente no momento.
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+        <div class="card-body bg-cinza2">
+            @if(session('success'))
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> {{ session('success') }}
             </div>
-            {{ $reservasPendentes->links() }}
+            @endif
+
+            <div class="row mb-4">
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <a href="{{ route('admin.reservas.pendentes') }}" class="text-decoration-none">
+                        <div class="card bg-secondary text-white h-100 card-link">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Reservas Pendentes</h5>
+                                <h2 class="display-4">{{ $reservasPendentesCount }}</h2>
+                            </div>
+                            <div class="card-footer">
+                                <span class="text-white">Avaliar Reservas</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <a href="{{ route('admin.reservas.aprovadas') }}" class="text-decoration-none">
+                        <div class="card bg-success text-white h-100 card-link">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Reservas Aprovadas</h5>
+                                <h2 class="display-4">{{ $reservasAprovadasCount }}</h2>
+                            </div>
+                            <div class="card-footer">
+                                <span class="text-white">Ver Detalhes</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <a href="{{ route('admin.reservas.rejeitadas') }}" class="text-decoration-none">
+                        <div class="card bg-danger text-white h-100 card-link">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Reservas Rejeitadas</h5>
+                                <h2 class="display-4">{{ $reservasRejeitadasCount }}</h2>
+                            </div>
+                            <div class="card-footer">
+                                <span class="text-white">Ver Detalhes</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-principal text-white">
+                            <h5 class="mb-0">Reservas Recentes</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Sala</th>
+                                            <th>Solicitante</th>
+                                            <th>Data</th>
+                                            <th>Status</th>
+                                            <th class="text-center">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($reservasRecentes as $reserva)
+                                        <tr>
+                                            <td>{{ $reserva->idReserva }}</td>
+                                            <td>{{ $reserva->nomeSala }}</td>
+                                            <td>{{ $reserva->nome }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($reserva->dataReservaInicial)->format('d/m/Y') }}</td>
+                                            <td>
+                                                @if($reserva->situacaoAprovada == 0)
+                                                <span class="badge bg-secondary">Pendente</span>
+                                                @elseif($reserva->situacaoAprovada == 1)
+                                                <span class="badge bg-success">Aprovada</span>
+                                                @else
+                                                <span class="badge bg-danger">Rejeitada</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="{{ route('admin.reservas.visualizar', $reserva->idReserva) }}" class="btn btn-info btn-sm">
+                                                    <i class="fas fa-eye"></i> Detalhes
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="6" class="text-center">Nenhuma reserva encontrada</td>
+                                        </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-end bg-cinza2 border-0">
+            <a href="{{ route('admin.logout') }}" class="btn btn-danger">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </a>
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.teste.mt-4');
+
+        cards.forEach(card => {
+            card.classList.add('d-none');
+        });
+
+        function animateCards() {
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.remove('d-none');
+                    card.classList.add('initial-animation');
+                    card.offsetHeight;
+
+                    setTimeout(() => {
+                        card.classList.add('show-card');
+
+                        setTimeout(() => {
+                            card.classList.remove('initial-animation');
+                            card.classList.remove('show-card');
+                        }, 700);
+                    }, 10);
+                }, 150 * index);
+            });
+        }
+
+        setTimeout(animateCards, 200);
+    });
+</script>
 @endsection

@@ -38,9 +38,9 @@ use Carbon\Carbon;
 
 <body class="d-flex flex-column min-vh-100">
 
-<header class="bg-principal my-4">
+<header class="bg-principal mt-4">
     <div class="container">
-        <div class="row my-2">
+        <div class="row">
             <div class="justify-content-center text-center">
                 <a href="{{ route('home') }}">
                     <img src="{{ asset('imagens/bannerreserva.png') }}" alt="Logo" class="img-fluid" style="max-height: 12vh;">
@@ -50,7 +50,9 @@ use Carbon\Carbon;
     </div>
 </header>
 
-    <main class="container">@yield('conteudo')</main>
+    <main class="container">
+        @yield('conteudo')
+    </main>
 
     <footer class="text-center">
         <div class="p-3 bg-light"><a class="text-verde" href="https://fapeu.com.br/"> © {{ Carbon::parse('now')->locale('pt_BR')->translatedFormat('Y') }} Fundação de Amparo à Pesquisa e Extensão Universitária</a></div>

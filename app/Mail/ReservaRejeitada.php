@@ -2,58 +2,42 @@
 
 namespace App\Mail;
 
+use App\Models\Reserva;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 class ReservaRejeitada extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $reserva;
+
+    public function __construct($reserva)
+    {
+        $this->reserva = $reserva;
+        
+        // Se o reserva for um objeto DB e não um modelo eloquent
+        if (!isset($this->reserva->datasReserva)) {
+            // Buscar as datas da reserva
+            $datasReserva = \Illuminate\Support\Facades\DB::table('DataReserva')
+                ->where('idReserva', $this->reserva->idReserva)
+                ->get();
+                
+            // Buscar detalhes da sala
+            $sala = \Illuminate\Support\Facades\DB::table('Salas')
+                ->where('idSala', $this->reserva->idSala)
+                ->first();
+                
+            // Adicionar propriedades ao objeto
+            $this->reserva->datasReserva = $datasReserva;
+            $this->reserva->sala = $sala;
+        }
+    }
+
     public function build()
     {
         return $this->subject('Reserva Rejeitada - ' . config('app.name'))
                     ->markdown('emails.reserva-rejeitada');
-    }
-
-    /**
-     * Create a new message instance.
-     */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
-     * Get the message envelope.
-     */
-    public function envelope(): Envelope
-    {
-        return new Envelope(
-            subject: 'Reserva Rejeitada',
-        );
-    }
-
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
-    {
-        return new Content(
-            view: 'view.name',
-        );
-    }
-
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
-    public function attachments(): array
-    {
-        return [];
     }
 }
