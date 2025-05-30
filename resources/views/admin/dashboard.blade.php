@@ -5,7 +5,7 @@
 @section('conteudo')
 <style>
     .card-link {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
 
     .card-link:hover {
@@ -140,7 +140,7 @@
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const cards = document.querySelectorAll('.teste.mt-4');
+        const cards = document.querySelectorAll('.teste');
 
         cards.forEach(card => {
             card.classList.add('d-none');

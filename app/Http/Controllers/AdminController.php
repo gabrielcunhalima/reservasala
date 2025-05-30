@@ -26,17 +26,17 @@ class AdminController extends Controller
 
     public function login(Request $request)
     {
-        $email = $request->input('email');
+        $name = $request->input('name');
         $senha = $request->input('password');
 
-        $admin = DB::table('Admins')->where('email', $email)->first();
+        $admin = DB::table('Admins')->where('name', $name)->first();
 
         if ($admin && password_verify($senha, $admin->password)) {
             session(['admin_logado' => true, 'admin_nome' => $admin->name]);
             return redirect()->route('admin.dashboard');
         }
 
-        return back()->with('error', 'Email ou senha incorretos!');
+        return back()->with('error', 'Nome ou senha incorretos!');
     }
 
     public function dashboard()

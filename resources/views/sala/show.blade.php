@@ -5,6 +5,7 @@
 @section('conteudo')
 <style>
     .card {
+        margin-top: 60px !important;
         border: none;
         border-radius: 16px;
         overflow: hidden;
@@ -12,7 +13,6 @@
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         margin: 0 auto;
     }
-
 
     .card-img-top {
         object-fit: cover;
@@ -91,7 +91,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const cards = document.querySelectorAll('.teste.mb-5');
+        const cards = document.querySelectorAll('.teste');
 
         cards.forEach(card => {
             card.classList.add('d-none');
